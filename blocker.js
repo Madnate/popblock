@@ -1,11 +1,19 @@
 // Runs in the page's MAIN world so the overrides below affect the page's own scripts.
-// It can't use chrome.* APIs: state arrives from bridge.js via a DOM event.
+// It can't use chrome.* APIs: state arrives from bridge.js via a DOM event, and each
+// blocked popup is reported back to bridge.js the same way.
 (function () {
   'use strict';
 
   const SAFE_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-presentation';
   const MIRROR_KEY   = 'popup_blocker_enabled';   // sync copy written by bridge.js
   const STATE_EVENT  = 'popup-blocker:state';
+  const BLOCK_EVENT  = 'popup-blocker:blocked';
+
+  // Built-ins the page could overwrite after we run.
+  const _CustomEvent = window.CustomEvent;
+  const _dispatch    = EventTarget.prototype.dispatchEvent;
+  const _stringify   = JSON.stringify;
+  const _URL         = window.URL;
 
   // Read the mirrored state synchronously so blocking is active before page scripts run.
   // bridge.js then confirms it from chrome.storage (the source of truth).
@@ -21,15 +29,36 @@
     console.info('[Popup blocker]', enabled ? 'ON' : 'OFF');
   });
 
+  // Resolves relative URLs, then compares real origins: a plain startsWith check
+  // would treat "/login" as external and accept "https://site.com.evil.example".
+  function resolve(raw) {
+    if (raw == null || raw === '') return '';
+    try { return new _URL(String(raw), location.href).href; } catch (_) { return String(raw); }
+  }
+  function isExternal(href) {
+    if (!href || href === 'about:blank') return false;
+    try { return new _URL(href, location.href).origin !== location.origin; } catch (_) { return false; }
+  }
+
+  // Tells bridge.js about a blocked popup. A string detail crosses JS worlds safely.
+  let lastReport = { key: '', time: 0 };
+  function report(kind, url) {
+    const key = kind + ' ' + url, now = Date.now();
+    if (key === lastReport.key && now - lastReport.time < 1000) return; // mousedown + click = one block
+    lastReport = { key, time: now };
+    _dispatch.call(document, new _CustomEvent(BLOCK_EVENT, { detail: _stringify({ kind, url: String(url) }) }));
+  }
+
   // ─── 1. Block window.open ──────────────────────────────────────────────────
   window.open = new Proxy(window.open, {
     apply(target, thisArg, args) {
-      const url = args[0] || '';
-      if (isBlocking() && !url.startsWith(location.origin) && url !== '' && url !== 'about:blank') {
+      const url = resolve(args[0]);
+      if (isBlocking() && isExternal(url)) {
         console.warn('[Popup blocked] window.open →', url);
-        return { closed: true, close() {} };
+        report('window.open', url);
+        return { closed: true, close() {}, focus() {} };
       }
-      return target.apply(thisArg, args);
+      return Reflect.apply(target, thisArg, args);
     }
   });
 
@@ -71,7 +100,8 @@
     }
     if (t === 'a') {
       new MutationObserver(() => {
-        if (isBlocking() && el.target === '_blank' && el.href && !el.href.startsWith(location.origin)) {
+        if (isBlocking() && el.target === '_blank' && isExternal(el.href)) {
+          report('link', el.href);
           el.target = '_self';
           el.href = 'javascript:void(0)';
         }
@@ -93,9 +123,10 @@
       }
     });
     document.querySelectorAll('a[target="_blank"]').forEach(a => {
-      if (!a.href || a.href.startsWith(location.origin)) return;
+      if (!isExternal(a.href)) return;
       const r = a.getBoundingClientRect(), s = getComputedStyle(a);
       if ((s.position === 'fixed' || s.position === 'absolute') && r.width > 200 && r.height > 200) {
+        report('overlay', a.href);
         a.remove();
       } else {
         a.target = '_self';
@@ -113,9 +144,10 @@
   function blockEvent(e) {
     if (!isBlocking()) return;
     const a = e.target.closest && e.target.closest('a');
-    if (a && a.target === '_blank' && a.href && !a.href.startsWith(location.origin)) {
+    if (a && a.target === '_blank' && isExternal(a.href)) {
       e.preventDefault(); e.stopImmediatePropagation();
       console.warn('[Popup blocked] click <a> →', a.href);
+      report('link', a.href);
     }
   }
   document.addEventListener('mousedown',  blockEvent, true);

@@ -1,71 +1,88 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <title>Popup Blocker</title>
+  <link rel="stylesheet" href="ui.css">
   <style>
-    body {
-      margin: 0;
-      width: 240px;
-      padding: 14px;
-      background: #141414;
-      color: #ddd;
-      font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-      font-size: 12px;
-    }
-    h1 {
-      margin: 0 0 4px;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      color: #888;
-      font-weight: 600;
-    }
+    body { width: 320px; padding: 14px; }
+    header { margin-bottom: 4px; }
+    #version { font-size: 10px; }
     #host {
       margin: 0 0 12px;
-      color: #ddd;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    #toggle {
-      all: unset;
-      box-sizing: border-box;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 12px;
-      border-radius: 6px;
+    #pause-row { margin-top: 10px; }
+    #pause-status { font-size: 11px; }
+
+    #activity { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+    #count {
+      min-width: 22px;
+      padding: 1px 6px;
+      border-radius: 9px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      text-align: center;
       font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      background: #1a1a1a;
-      color: #666;
-      border: 1px solid #2a2a2a;
-      transition: all 0.2s ease;
     }
-    #toggle:hover { background: #222; border-color: #3a3a3a; }
-    #toggle:focus-visible { outline: 2px solid #3ddc6e; outline-offset: 2px; }
-    #toggle.on { color: #ddd; border-color: #1e4a2c; box-shadow: 0 0 0 1px #1e4a2c; }
-    #toggle:disabled { cursor: not-allowed; opacity: 0.5; }
-    #dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: #333;
-      flex-shrink: 0;
-      transition: background 0.25s, box-shadow 0.25s;
+    #log { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+    #log li {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 6px;
+      border-radius: 5px;
+      background: var(--surface);
     }
-    #toggle.on #dot { background: #3ddc6e; box-shadow: 0 0 6px #3ddc6eaa; }
-    #hint { margin: 10px 0 0; color: #666; font-size: 10px; line-height: 1.4; }
+    .kind {
+      font-size: 9px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0 4px;
+    }
+    .url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+
+    footer { margin-top: 14px; font-size: 11px; }
+    #shortcut { font-size: 10px; }
   </style>
 </head>
 <body>
-  <h1>POPUP BLOCKER</h1>
+  <header class="bar">
+    <h1>POPUP BLOCKER</h1>
+    <span id="version" class="muted"></span>
+  </header>
   <p id="host">…</p>
-  <button id="toggle" role="switch" aria-checked="false">
-    <span id="dot"></span><span id="label">BLOCKER OFF</span>
+
+  <button id="toggle" class="switch" role="switch" aria-checked="false" disabled>
+    <span class="dot" aria-hidden="true"></span><span id="toggle-label">BLOCKING OFF</span>
   </button>
-  <p id="hint"></p>
+  <p id="rule" class="hint"></p>
+
+  <div id="pause-row" class="row" hidden>
+    <span id="pause-status" class="muted" role="status"></span>
+    <button id="pause" class="btn">Pause 10 min</button>
+  </div>
+
+  <section id="activity" aria-labelledby="activity-title" hidden>
+    <div class="row">
+      <h2 id="activity-title">BLOCKED ON THIS PAGE</h2>
+      <span id="count" aria-live="polite">0</span>
+    </div>
+    <ol id="log" aria-label="Last 10 blocked popups"></ol>
+    <p id="log-empty" class="hint">Nothing blocked on this page yet.</p>
+  </section>
+
+  <footer class="bar">
+    <button id="options" class="link">Options</button>
+    <span id="shortcut" class="muted"></span>
+  </footer>
+
   <script type="module" src="popup.js"></script>
 </body>
 </html>

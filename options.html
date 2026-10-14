@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Popup Blocker · Options</title>
+  <link rel="stylesheet" href="ui.css">
+  <style>
+    body { padding: 32px 16px; }
+    main { max-width: 620px; margin: 0 auto; display: grid; gap: 22px; }
+    section, fieldset {
+      margin: 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #171717;
+    }
+    h2, legend { margin-bottom: 10px; }
+    legend { padding: 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); }
+
+    .mode { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; cursor: pointer; }
+    .mode input { margin-top: 2px; accent-color: var(--accent); }
+    .mode small { display: block; color: var(--muted); }
+
+    .list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .in-use { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); }
+    .list.inactive .in-use { color: var(--muted); }
+    .list.inactive ul { opacity: 0.6; }
+
+    ul { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 4px; }
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: var(--surface);
+    }
+    li.empty { background: none; padding-left: 0; color: var(--muted); }
+
+    .add { display: flex; gap: 6px; }
+    .add input {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 9px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+    }
+    .add input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .add input[aria-invalid="true"] { border-color: var(--error); }
+    .error { margin: 6px 0 0; color: var(--error); font-size: 11px; }
+    .error:empty { display: none; }
+
+    kbd {
+      padding: 1px 6px;
+      border: 1px solid var(--border-hover);
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      background: var(--surface);
+      font-family: var(--font);
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    footer { text-align: center; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="bar">
+      <h1>POPUP BLOCKER · OPTIONS</h1>
+      <span id="version" class="muted"></span>
+    </header>
+
+    <fieldset>
+      <legend>DEFAULT BEHAVIOUR</legend>
+      <label class="mode">
+        <input type="radio" name="mode" value="perSite">
+        <span>Off by default<small>Block only on the sites you turn it on for.</small></span>
+      </label>
+      <label class="mode">
+        <input type="radio" name="mode" value="global">
+        <span>On everywhere<small>Block on every site except the ones you exclude.</small></span>
+      </label>
+    </fieldset>
+
+    <section class="list" data-key="enabledSites" aria-labelledby="enabled-title">
+      <div class="list-head">
+        <h2 id="enabled-title">SITES WHERE BLOCKING IS ON</h2>
+        <span class="in-use"></span>
+      </div>
+      <p class="hint">Used in "off by default" mode.</p>
+      <ul></ul>
+      <form class="add" novalidate>
+        <label class="visually-hidden" for="add-enabled">Add a site where blocking is on</label>
+        <input id="add-enabled" type="text" placeholder="example.com or *.example.com" autocomplete="off" spellcheck="false" aria-describedby="error-enabled">
+        <button class="btn" type="submit">Add</button>
+      </form>
+      <p id="error-enabled" class="error" role="alert"></p>
+    </section>
+
+    <section class="list" data-key="excludedSites" aria-labelledby="excluded-title">
+      <div class="list-head">
+        <h2 id="excluded-title">SITES EXCLUDED FROM BLOCKING</h2>
+        <span class="in-use"></span>
+      </div>
+      <p class="hint">Used in "on everywhere" mode.</p>
+      <ul></ul>
+      <form class="add" novalidate>
+        <label class="visually-hidden" for="add-excluded">Add a site excluded from blocking</label>
+        <input id="add-excluded" type="text" placeholder="example.com or *.example.com" autocomplete="off" spellcheck="false" aria-describedby="error-excluded">
+        <button class="btn" type="submit">Add</button>
+      </form>
+      <p id="error-excluded" class="error" role="alert"></p>
+    </section>
+
+    <section aria-labelledby="shortcut-title">
+      <h2 id="shortcut-title">KEYBOARD SHORTCUT</h2>
+      <p class="row" style="justify-content: flex-start; flex-wrap: wrap;">
+        Toggle blocking on the current site: <kbd id="shortcut">Not set</kbd>
+        <button id="edit-shortcut" class="link">Change</button>
+      </p>
+    </section>
+
+    <section aria-labelledby="backup-title">
+      <h2 id="backup-title">BACKUP</h2>
+      <p class="hint" style="margin: 0 0 10px;">Export or import the mode and both site lists as JSON.</p>
+      <div class="actions">
+        <button id="export" class="btn">Export JSON</button>
+        <button id="import" class="btn">Import JSON…</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+      </div>
+      <p id="backup-status" class="hint" role="status"></p>
+    </section>
+
+    <footer class="muted">Wildcards: <code>*.example.com</code> covers example.com and all its subdomains.</footer>
+  </main>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

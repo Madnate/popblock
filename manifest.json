@@ -1,15 +1,27 @@
 {
   "manifest_version": 3,
   "name": "Popup Blocker",
-  "version": "1.0.0",
-  "description": "Blocks click-jacked popups, with a per-site toggle.",
+  "version": "1.1.0",
+  "description": "Blocks click-jacked popups, per site or everywhere, with a log of what was blocked.",
+  "minimum_chrome_version": "111",
   "permissions": ["storage", "activeTab"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_title": "Popup Blocker",
     "default_popup": "popup.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "toggle-site": {
+      "suggested_key": { "default": "Alt+Shift+P" },
+      "description": "Toggle blocking on the current site"
+    }
   },
   "content_scripts": [
     {
@@ -21,7 +33,7 @@
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["bridge.js"],
+      "js": ["lib/rules.js", "bridge.js"],
       "run_at": "document_start",
       "all_frames": false
     }
